@@ -158,7 +158,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Animation Helper ---
+    // --- Animation Easing Functions ---
+    function getEasingFunction(style) {
+        switch(style) {
+            case 'ease-in':
+                return t => t*t;
+            case 'ease-out':
+                return t => t*(2-t);
+            case 'bounce':
+                return t => {
+                    if (t < (1/2.75)) {
+                        return 7.5625*t*t;
+                    } else if (t < (2/2.75)) {
+                        t -= (1.5/2.75);
+                        return 7.5625*t*t + 0.75;
+                    } else if (t < (2.5/2.75)) {
+                        t -= (2.25/2.75);
+                        return 7.5625*t*t + 0.9375;
+                    } else {
+                        t -= (2.625/2.75);
+                        return 7.5625*t*t + 0.984375;
+                    }
+                };
+            case 'linear':
+            default:
+                return t => t;
+        }
+    }
+
+    // --- Determinant Animation Helper ---
+    function animateDeterminantChange(elementId, fromValue, toValue, duration = 500) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        const start = performance.now();
+        function frame(now) {
+            let t = (now - start) / duration;
+            if (t > 1) t = 1;
+            const val = fromValue + (toValue - fromValue) * t;
+            el.textContent = val.toFixed(2);
+            el.style.transform = `scale(${1 + 0.2*Math.sin(Math.PI*t)})`;
+            el.style.color = (toValue < 0) ? '#ff4444' : '#FFD700';
+            if (t < 1) {
+                requestAnimationFrame(frame);
+            } else {
+                el.textContent = toValue.toFixed(2);
+                el.style.transform = '';
+                el.style.color = (toValue < 0) ? '#ff4444' : '#FFD700';
+            }
+        }
+        requestAnimationFrame(frame);
+    }
+
+    // --- Animation Option State ---
+    function getAnimationOptions() {
+        const speed = parseInt(document.getElementById('anim-speed')?.value || '500', 10);
+        const style = document.getElementById('anim-style')?.value || 'linear';
+        return { duration: speed, style };
+    }
+
+    // --- Enhanced Animation Helper ---
     function animateTransformation({
         canvasId,
         fromMatrix,
@@ -168,11 +226,16 @@ document.addEventListener('DOMContentLoaded', () => {
         fromJHat,
         toJHat,
         duration = 500,
+        style = 'linear',
         showUnitSquare = true,
         onUpdate = () => {},
-        onComplete = () => {}
+        onComplete = () => {},
+        detElementId = null,
+        detFrom = null,
+        detTo = null
     }) {
         const start = performance.now();
+        const ease = getEasingFunction(style);
         function lerp(a, b, t) { return a + (b - a) * t; }
         function lerpVec(v1, v2, t) { return [lerp(v1[0], v2[0], t), lerp(v1[1], v2[1], t)]; }
         function lerpMat(m1, m2, t) {
@@ -184,14 +247,32 @@ document.addEventListener('DOMContentLoaded', () => {
         function frame(now) {
             let t = (now - start) / duration;
             if (t > 1) t = 1;
-            const curMatrix = lerpMat(fromMatrix, toMatrix, t);
-            const curIHat = lerpVec(fromIHat, toIHat, t);
-            const curJHat = lerpVec(fromJHat, toJHat, t);
+            const et = ease(t);
+            const curMatrix = lerpMat(fromMatrix, toMatrix, et);
+            const curIHat = lerpVec(fromIHat, toIHat, et);
+            const curJHat = lerpVec(fromJHat, toJHat, et);
             drawGridAndVectors(canvasId, curIHat, curJHat, curMatrix, showUnitSquare);
-            onUpdate(curMatrix, curIHat, curJHat, t);
+            if (detElementId && detFrom !== null && detTo !== null) {
+                const val = detFrom + (detTo - detFrom) * et;
+                const el = document.getElementById(detElementId);
+                if (el) {
+                    el.textContent = val.toFixed(2);
+                    el.style.transform = `scale(${1 + 0.2*Math.sin(Math.PI*et)})`;
+                    el.style.color = (val < 0) ? '#ff4444' : '#FFD700';
+                }
+            }
+            onUpdate(curMatrix, curIHat, curJHat, et);
             if (t < 1) {
                 requestAnimationFrame(frame);
             } else {
+                if (detElementId && detTo !== null) {
+                    const el = document.getElementById(detElementId);
+                    if (el) {
+                        el.textContent = detTo.toFixed(2);
+                        el.style.transform = '';
+                        el.style.color = (detTo < 0) ? '#ff4444' : '#FFD700';
+                    }
+                }
                 onComplete(curMatrix, curIHat, curJHat);
             }
         }
@@ -215,6 +296,46 @@ document.addEventListener('DOMContentLoaded', () => {
         multiplyMatrixVector(demoDetMatrix, [0,1]), 
         demoDetMatrix, true);
 
+    let demoDetPrev = calculateDeterminant2x2(demoDetMatrix);
+    function animateDemoDeterminant(newMatrix) {
+        const { duration, style } = getAnimationOptions();
+        const fromIHat = multiplyMatrixVector(demoDetMatrix, [1,0]);
+        const fromJHat = multiplyMatrixVector(demoDetMatrix, [0,1]);
+        const fromMatrix = demoDetMatrix;
+        const toIHat = multiplyMatrixVector(newMatrix, [1,0]);
+        const toJHat = multiplyMatrixVector(newMatrix, [0,1]);
+        const toMatrix = newMatrix;
+        const detFrom = calculateDeterminant2x2(fromMatrix);
+        const detTo = calculateDeterminant2x2(toMatrix);
+        animateTransformation({
+            canvasId: 'determinantDemoCanvas',
+            fromMatrix,
+            toMatrix,
+            fromIHat,
+            toIHat,
+            fromJHat,
+            toJHat,
+            duration,
+            style,
+            showUnitSquare: true,
+            detElementId: 'demo-det-value',
+            detFrom,
+            detTo,
+            onUpdate: () => {},
+            onComplete: () => {
+                demoDetPrev = detTo;
+            }
+        });
+    }
+    // Example: Animate to a new matrix every 5 seconds for fun
+    setInterval(() => {
+        const randomMatrix = [
+            [1 + Math.random()*2, Math.random()*2-1],
+            [Math.random()*2-1, 1 + Math.random()*2]
+        ];
+        createMatrixHTML(randomMatrix, 'demo-det-matrix');
+        animateDemoDeterminant(randomMatrix);
+    }, 7000);
 
     // --- Composition Section (M_S * M_R) ---
     const M_R = [[0, -1], [1, 0]]; // 90 deg CCW Rotation
@@ -250,13 +371,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('applyRotation').addEventListener('click', () => {
-        // Rotation is applied to standard basis
+        const { duration, style } = getAnimationOptions();
         const fromIHat = iHat_current_SR;
         const fromJHat = jHat_current_SR;
         const fromMatrix = currentGridTransform_SR;
         const toIHat = multiplyMatrixVector(M_R, [1,0]);
         const toJHat = multiplyMatrixVector(M_R, [0,1]);
         const toMatrix = M_R;
+        const detFrom = calculateDeterminant2x2(fromMatrix);
+        const detTo = calculateDeterminant2x2(toMatrix);
         animateTransformation({
             canvasId: 'compositionCanvas',
             fromMatrix,
@@ -265,9 +388,13 @@ document.addEventListener('DOMContentLoaded', () => {
             toIHat,
             fromJHat,
             toJHat,
-            duration: 500,
+            duration,
+            style,
             showUnitSquare: true,
-            onUpdate: (curMatrix, curIHat, curJHat, t) => {},
+            detElementId: 'det-M_C_SR',
+            detFrom,
+            detTo,
+            onUpdate: () => {},
             onComplete: (curMatrix, curIHat, curJHat) => {
                 iHat_current_SR = toIHat;
                 jHat_current_SR = toJHat;
@@ -281,28 +408,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('applyShearToRotation').addEventListener('click', () => {
+        const { duration, style } = getAnimationOptions();
         let iHat_after_R, jHat_after_R;
-        // Check if rotation was the immediately preceding transformation state for the canvas
-        // This logic attempts to ensure M_R was the basis for applying M_S
         if (JSON.stringify(currentGridTransform_SR) !== JSON.stringify(M_R)) {
-             // If not, or if it's some other state, assume we start by applying M_R
-             iHat_after_R = multiplyMatrixVector(M_R, [1,0]);
-             jHat_after_R = multiplyMatrixVector(M_R, [0,1]);
-             // Update text for i-hat/j-hat after M_R, as it's being implicitly applied now.
-             displayVectorCoords(iHat_after_R, 'i-hat-after-R');
-             displayVectorCoords(jHat_after_R, 'j-hat-after-R');
+            iHat_after_R = multiplyMatrixVector(M_R, [1,0]);
+            jHat_after_R = multiplyMatrixVector(M_R, [0,1]);
+            displayVectorCoords(iHat_after_R, 'i-hat-after-R');
+            displayVectorCoords(jHat_after_R, 'j-hat-after-R');
         } else {
-            // Rotation was the last step, iHat_current_SR and jHat_current_SR are the rotated vectors
-            iHat_after_R = [...iHat_current_SR]; // These are already M_R * basis_vector
+            iHat_after_R = [...iHat_current_SR];
             jHat_after_R = [...jHat_current_SR];
         }
-
         const fromIHat = iHat_after_R;
         const fromJHat = jHat_after_R;
         const fromMatrix = M_R;
         const toIHat = multiplyMatrixVector(M_S, iHat_after_R); 
         const toJHat = multiplyMatrixVector(M_S, jHat_after_R);
         const toMatrix = multiplyMatrices(M_S, M_R);
+        const detFrom = calculateDeterminant2x2(fromMatrix);
+        const detTo = calculateDeterminant2x2(toMatrix);
         animateTransformation({
             canvasId: 'compositionCanvas',
             fromMatrix,
@@ -311,9 +435,13 @@ document.addEventListener('DOMContentLoaded', () => {
             toIHat,
             fromJHat,
             toJHat,
-            duration: 500,
+            duration,
+            style,
             showUnitSquare: true,
-            onUpdate: (curMatrix, curIHat, curJHat, t) => {},
+            detElementId: 'det-M_C_SR',
+            detFrom,
+            detTo,
+            onUpdate: () => {},
             onComplete: (curMatrix, curIHat, curJHat) => {
                 iHat_current_SR = toIHat;
                 jHat_current_SR = toJHat;
@@ -325,6 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('showCompositionSR').addEventListener('click', () => {
+        const { duration, style } = getAnimationOptions();
         const M_C_SR = multiplyMatrices(M_S, M_R);
         const fromIHat = iHat_current_SR;
         const fromJHat = jHat_current_SR;
@@ -332,6 +461,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const toIHat = [M_C_SR[0][0], M_C_SR[1][0]];
         const toJHat = [M_C_SR[0][1], M_C_SR[1][1]];
         const toMatrix = M_C_SR;
+        const detFrom = calculateDeterminant2x2(fromMatrix);
+        const detTo = calculateDeterminant2x2(toMatrix);
         animateTransformation({
             canvasId: 'compositionCanvas',
             fromMatrix,
@@ -340,9 +471,13 @@ document.addEventListener('DOMContentLoaded', () => {
             toIHat,
             fromJHat,
             toJHat,
-            duration: 500,
+            duration,
+            style,
             showUnitSquare: true,
-            onUpdate: (curMatrix, curIHat, curJHat, t) => {},
+            detElementId: 'det-M_C_SR',
+            detFrom,
+            detTo,
+            onUpdate: () => {},
             onComplete: (curMatrix, curIHat, curJHat) => {
                 iHat_current_SR = toIHat;
                 jHat_current_SR = toJHat;
@@ -356,7 +491,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-
 
     // --- Order Matters Section (M_R * M_S) ---
     let iHat_current_RS = [1,0]; 
@@ -380,12 +514,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('applyShearOrder').addEventListener('click', () => {
+        const { duration, style } = getAnimationOptions();
         const fromIHat = iHat_current_RS;
         const fromJHat = jHat_current_RS;
         const fromMatrix = currentGridTransform_RS;
         const toIHat = multiplyMatrixVector(M_S, [1,0]);
         const toJHat = multiplyMatrixVector(M_S, [0,1]);
         const toMatrix = M_S;
+        const detFrom = calculateDeterminant2x2(fromMatrix);
+        const detTo = calculateDeterminant2x2(toMatrix);
         animateTransformation({
             canvasId: 'orderCanvas',
             fromMatrix,
@@ -394,9 +531,13 @@ document.addEventListener('DOMContentLoaded', () => {
             toIHat,
             fromJHat,
             toJHat,
-            duration: 500,
+            duration,
+            style,
             showUnitSquare: true,
-            onUpdate: (curMatrix, curIHat, curJHat, t) => {},
+            detElementId: 'det-M_C_RS',
+            detFrom,
+            detTo,
+            onUpdate: () => {},
             onComplete: (curMatrix, curIHat, curJHat) => {
                 iHat_current_RS = toIHat;
                 jHat_current_RS = toJHat;
@@ -410,23 +551,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     document.getElementById('applyRotationToShearOrder').addEventListener('click', () => {
+        const { duration, style } = getAnimationOptions();
         let iHat_after_S, jHat_after_S;
         if (JSON.stringify(currentGridTransform_RS) !== JSON.stringify(M_S)) {
-             iHat_after_S = multiplyMatrixVector(M_S, [1,0]);
-             jHat_after_S = multiplyMatrixVector(M_S, [0,1]);
-             displayVectorCoords(iHat_after_S, 'i-hat-after-S');
-             displayVectorCoords(jHat_after_S, 'j-hat-after-S');
+            iHat_after_S = multiplyMatrixVector(M_S, [1,0]);
+            jHat_after_S = multiplyMatrixVector(M_S, [0,1]);
+            displayVectorCoords(iHat_after_S, 'i-hat-after-S');
+            displayVectorCoords(jHat_after_S, 'j-hat-after-S');
         } else {
             iHat_after_S = [...iHat_current_RS];
             jHat_after_S = [...jHat_current_RS];
         }
-        
         const fromIHat = iHat_after_S;
         const fromJHat = jHat_after_S;
         const fromMatrix = M_S;
         const toIHat = multiplyMatrixVector(M_R, iHat_after_S);
         const toJHat = multiplyMatrixVector(M_R, jHat_after_S);
         const toMatrix = multiplyMatrices(M_R, M_S); 
+        const detFrom = calculateDeterminant2x2(fromMatrix);
+        const detTo = calculateDeterminant2x2(toMatrix);
         animateTransformation({
             canvasId: 'orderCanvas',
             fromMatrix,
@@ -435,9 +578,13 @@ document.addEventListener('DOMContentLoaded', () => {
             toIHat,
             fromJHat,
             toJHat,
-            duration: 500,
+            duration,
+            style,
             showUnitSquare: true,
-            onUpdate: (curMatrix, curIHat, curJHat, t) => {},
+            detElementId: 'det-M_C_RS',
+            detFrom,
+            detTo,
+            onUpdate: () => {},
             onComplete: (curMatrix, curIHat, curJHat) => {
                 iHat_current_RS = toIHat;
                 jHat_current_RS = toJHat;
@@ -449,6 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     document.getElementById('showCompositionRS').addEventListener('click', () => {
+        const { duration, style } = getAnimationOptions();
         const M_C_RS = multiplyMatrices(M_R, M_S);
         const fromIHat = iHat_current_RS;
         const fromJHat = jHat_current_RS;
@@ -456,6 +604,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const toIHat = [M_C_RS[0][0], M_C_RS[1][0]];
         const toJHat = [M_C_RS[0][1], M_C_RS[1][1]];
         const toMatrix = M_C_RS;
+        const detFrom = calculateDeterminant2x2(fromMatrix);
+        const detTo = calculateDeterminant2x2(toMatrix);
         animateTransformation({
             canvasId: 'orderCanvas',
             fromMatrix,
@@ -464,9 +614,13 @@ document.addEventListener('DOMContentLoaded', () => {
             toIHat,
             fromJHat,
             toJHat,
-            duration: 500,
+            duration,
+            style,
             showUnitSquare: true,
-            onUpdate: (curMatrix, curIHat, curJHat, t) => {},
+            detElementId: 'det-M_C_RS',
+            detFrom,
+            detTo,
+            onUpdate: () => {},
             onComplete: (curMatrix, curIHat, curJHat) => {
                 iHat_current_RS = toIHat;
                 jHat_current_RS = toJHat;
@@ -487,4 +641,308 @@ document.addEventListener('DOMContentLoaded', () => {
         multiplyMatrixVector(M_assoc_initial, [1,0]), 
         multiplyMatrixVector(M_assoc_initial, [0,1]), 
         M_assoc_initial, true);
+
+    // --- Eigene Matrix ausprobieren ---
+    function updateCustomMatrixDisplay(matrix) {
+        createMatrixHTML(matrix, 'custom-matrix-display', 'i-hat-color', 'j-hat-color');
+        displayDeterminant(matrix, 'custom-matrix-det');
+        // Update sliders if present
+        ['a11','a12','a21','a22'].forEach((id, idx) => {
+            const slider = document.getElementById('slider-' + id);
+            if (slider) {
+                const val = idx < 2 ? matrix[0][idx] : matrix[1][idx-2];
+                slider.value = val;
+            }
+        });
+    }
+    function drawCustomMatrix(matrix) {
+        const iHat = multiplyMatrixVector(matrix, [1,0]);
+        const jHat = multiplyMatrixVector(matrix, [0,1]);
+        drawGridAndVectors('customMatrixCanvas', iHat, jHat, matrix, true);
+    }
+    // Initial state
+    let customMatrix = [[1,0],[0,1]];
+    updateCustomMatrixDisplay(customMatrix);
+    drawCustomMatrix(customMatrix);
+
+    // --- Sliders for live matrix value changes ---
+    ['a11','a12','a21','a22'].forEach((id, idx) => {
+        const slider = document.getElementById('slider-' + id);
+        if (slider) {
+            slider.addEventListener('input', function() {
+                const vals = [
+                    parseFloat(document.getElementById('slider-a11').value),
+                    parseFloat(document.getElementById('slider-a12').value),
+                    parseFloat(document.getElementById('slider-a21').value),
+                    parseFloat(document.getElementById('slider-a22').value)
+                ];
+                const newMatrix = [[vals[0], vals[1]], [vals[2], vals[3]]];
+                const fromMatrix = customMatrix;
+                const toMatrix = newMatrix;
+                const fromIHat = multiplyMatrixVector(fromMatrix, [1,0]);
+                const fromJHat = multiplyMatrixVector(fromMatrix, [0,1]);
+                const toIHat = multiplyMatrixVector(toMatrix, [1,0]);
+                const toJHat = multiplyMatrixVector(toMatrix, [0,1]);
+                const detFrom = calculateDeterminant2x2(fromMatrix);
+                const detTo = calculateDeterminant2x2(toMatrix);
+                customMatrix = newMatrix;
+                updateCustomMatrixDisplay(customMatrix);
+                animateTransformation({
+                    canvasId: 'customMatrixCanvas',
+                    fromMatrix,
+                    toMatrix,
+                    fromIHat,
+                    toIHat,
+                    fromJHat,
+                    toJHat,
+                    ...getAnimationOptions(),
+                    showUnitSquare: true,
+                    detElementId: 'custom-matrix-det',
+                    detFrom,
+                    detTo,
+                    onUpdate: () => {},
+                    onComplete: () => {}
+                });
+                // Update input fields
+                document.getElementById('custom-a11').value = vals[0];
+                document.getElementById('custom-a12').value = vals[1];
+                document.getElementById('custom-a21').value = vals[2];
+                document.getElementById('custom-a22').value = vals[3];
+            });
+        }
+    });
+
+    // --- Sync input fields <-> sliders for custom matrix ---
+    // When input fields change, update sliders and animate
+    ['a11','a12','a21','a22'].forEach((id, idx) => {
+        const input = document.getElementById('custom-' + id);
+        if (input) {
+            input.addEventListener('input', function() {
+                const vals = [
+                    parseFloat(document.getElementById('custom-a11').value),
+                    parseFloat(document.getElementById('custom-a12').value),
+                    parseFloat(document.getElementById('custom-a21').value),
+                    parseFloat(document.getElementById('custom-a22').value)
+                ];
+                // Update sliders
+                document.getElementById('slider-a11').value = vals[0];
+                document.getElementById('slider-a12').value = vals[1];
+                document.getElementById('slider-a21').value = vals[2];
+                document.getElementById('slider-a22').value = vals[3];
+                // Animate
+                const newMatrix = [[vals[0], vals[1]], [vals[2], vals[3]]];
+                const fromMatrix = customMatrix;
+                const toMatrix = newMatrix;
+                const fromIHat = multiplyMatrixVector(fromMatrix, [1,0]);
+                const fromJHat = multiplyMatrixVector(fromMatrix, [0,1]);
+                const toIHat = multiplyMatrixVector(toMatrix, [1,0]);
+                const toJHat = multiplyMatrixVector(toMatrix, [0,1]);
+                const detFrom = calculateDeterminant2x2(fromMatrix);
+                const detTo = calculateDeterminant2x2(toMatrix);
+                customMatrix = newMatrix;
+                updateCustomMatrixDisplay(customMatrix);
+                animateTransformation({
+                    canvasId: 'customMatrixCanvas',
+                    fromMatrix,
+                    toMatrix,
+                    fromIHat,
+                    toIHat,
+                    fromJHat,
+                    toJHat,
+                    ...getAnimationOptions(),
+                    showUnitSquare: true,
+                    detElementId: 'custom-matrix-det',
+                    detFrom,
+                    detTo,
+                    onUpdate: () => {},
+                    onComplete: () => {}
+                });
+            });
+        }
+    });
+
+    // --- Inverse button ---
+    const inverseBtn = document.getElementById('show-inverse-matrix');
+    if (inverseBtn) {
+        inverseBtn.addEventListener('click', function() {
+            const det = calculateDeterminant2x2(customMatrix);
+            if (Math.abs(det) < 1e-8) {
+                alert('Matrix is not invertible!');
+                return;
+            }
+            const inv = [
+                [customMatrix[1][1]/det, -customMatrix[0][1]/det],
+                [-customMatrix[1][0]/det, customMatrix[0][0]/det]
+            ];
+            const fromMatrix = customMatrix;
+            const toMatrix = inv;
+            const fromIHat = multiplyMatrixVector(fromMatrix, [1,0]);
+            const fromJHat = multiplyMatrixVector(fromMatrix, [0,1]);
+            const toIHat = multiplyMatrixVector(toMatrix, [1,0]);
+            const toJHat = multiplyMatrixVector(toMatrix, [0,1]);
+            const detFrom = calculateDeterminant2x2(fromMatrix);
+            const detTo = calculateDeterminant2x2(toMatrix);
+            animateTransformation({
+                canvasId: 'customMatrixCanvas',
+                fromMatrix,
+                toMatrix,
+                fromIHat,
+                toIHat,
+                fromJHat,
+                toJHat,
+                ...getAnimationOptions(),
+                showUnitSquare: true,
+                detElementId: 'custom-matrix-det',
+                detFrom,
+                detTo,
+                onUpdate: () => {},
+                onComplete: () => {
+                    customMatrix = toMatrix;
+                    updateCustomMatrixDisplay(customMatrix);
+                }
+            });
+        });
+    }
+
+    // --- Eigenvectors/eigenvalues button ---
+    const eigenBtn = document.getElementById('show-eigenvectors');
+    if (eigenBtn) {
+        eigenBtn.addEventListener('click', function() {
+            // Compute eigenvalues
+            const a = customMatrix[0][0], b = customMatrix[0][1], c = customMatrix[1][0], d = customMatrix[1][1];
+            const tr = a + d;
+            const det = a*d - b*c;
+            const disc = tr*tr - 4*det;
+            if (disc < 0) {
+                alert('No real eigenvectors (complex eigenvalues).');
+                return;
+            }
+            const lambda1 = (tr + Math.sqrt(disc))/2;
+            const lambda2 = (tr - Math.sqrt(disc))/2;
+            // Find eigenvectors
+            function getEigenvector(lambda) {
+                // (A - lambda*I)v = 0
+                // Try first row
+                const row = [a-lambda, b];
+                if (Math.abs(row[0]) > 1e-8 || Math.abs(row[1]) > 1e-8) {
+                    // v = [1, -row[0]/row[1]] or [0,1] if row[1]==0
+                    if (Math.abs(row[1]) > 1e-8) {
+                        return [1, -row[0]/row[1]];
+                    } else {
+                        return [0,1];
+                    }
+                } else {
+                    // Try second row
+                    const row2 = [c, d-lambda];
+                    if (Math.abs(row2[0]) > 1e-8) {
+                        return [1, -row2[0]/row2[1]];
+                    } else {
+                        return [0,1];
+                    }
+                }
+            }
+            const v1 = getEigenvector(lambda1);
+            const v2 = getEigenvector(lambda2);
+            // Draw eigenvectors on top of current canvas
+            const canvas = document.getElementById('customMatrixCanvas');
+            const ctx = canvas.getContext('2d');
+            // Redraw current matrix
+            drawCustomMatrix(customMatrix);
+            // Draw eigenvectors
+            function drawEigVec(v, color, label) {
+                const scale = 60;
+                const originX = canvas.width/2, originY = canvas.height/2;
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(originX, originY);
+                ctx.lineTo(originX + v[0]*scale, originY - v[1]*scale);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                ctx.font = 'bold 16px Manifold';
+                ctx.fillStyle = color;
+                ctx.fillText(label, originX + v[0]*scale + 5, originY - v[1]*scale - 5);
+                ctx.restore();
+            }
+            drawEigVec(v1, '#00BFFF', 'e₁');
+            drawEigVec(v2, '#8A2BE2', 'e₂');
+            // Show eigenvalues in UI if present
+            const eigvalEl = document.getElementById('custom-eigenvalues');
+            if (eigvalEl) {
+                eigvalEl.textContent = `λ₁ = ${lambda1.toFixed(2)}, λ₂ = ${lambda2.toFixed(2)}`;
+            }
+        });
+    }
+
+    // --- Export button ---
+    const exportBtn = document.getElementById('export-canvas-img');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            const canvas = document.getElementById('customMatrixCanvas');
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'matrix-visualization.png';
+            a.click();
+        });
+    }
+
+    // --- Placeholder for didactic/quiz features ---
+    const quizBtn = document.getElementById('quiz-placeholder');
+    if (quizBtn) {
+        quizBtn.addEventListener('click', function() {
+            alert('Quiz/Didaktik-Features folgen bald!');
+        });
+    }
+
+    document.getElementById('custom-matrix-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const a11 = parseFloat(document.getElementById('custom-a11').value);
+        const a12 = parseFloat(document.getElementById('custom-a12').value);
+        const a21 = parseFloat(document.getElementById('custom-a21').value);
+        const a22 = parseFloat(document.getElementById('custom-a22').value);
+        const newMatrix = [[a11, a12], [a21, a22]];
+        customMatrix = newMatrix;
+        updateCustomMatrixDisplay(customMatrix);
+        // Animation-Optionen übernehmen
+        const { duration, style } = getAnimationOptions();
+        const fromMatrix = [[1,0],[0,1]];
+        const toMatrix = customMatrix;
+        const fromIHat = [1,0];
+        const fromJHat = [0,1];
+        const toIHat = multiplyMatrixVector(customMatrix, [1,0]);
+        const toJHat = multiplyMatrixVector(customMatrix, [0,1]);
+        const detFrom = calculateDeterminant2x2(fromMatrix);
+        const detTo = calculateDeterminant2x2(toMatrix);
+        animateTransformation({
+            canvasId: 'customMatrixCanvas',
+            fromMatrix,
+            toMatrix,
+            fromIHat,
+            toIHat,
+            fromJHat,
+            toJHat,
+            duration,
+            style,
+            showUnitSquare: true,
+            detElementId: 'custom-matrix-det',
+            detFrom,
+            detTo,
+            onUpdate: () => {},
+            onComplete: () => {}
+        });
+    });
+
+    // --- Preset-Buttons für typische Matrizen ---
+    document.querySelectorAll('.preset-matrix-buttons button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const values = this.getAttribute('data-matrix').split(',').map(Number);
+            document.getElementById('custom-a11').value = values[0];
+            document.getElementById('custom-a12').value = values[1];
+            document.getElementById('custom-a21').value = values[2];
+            document.getElementById('custom-a22').value = values[3];
+            // Trigger the form submit programmatically for Animation
+            document.getElementById('custom-matrix-form').dispatchEvent(new Event('submit'));
+        });
+    });
 });

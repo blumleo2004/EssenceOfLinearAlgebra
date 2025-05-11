@@ -1,4 +1,3 @@
-
 body {
     background-color: #1a1a1a; /* Darker than #222 for more contrast */
     color: #e0e0e0; /* Light gray for text */
@@ -114,6 +113,7 @@ canvas {
 .determinant-value {
     font-weight: bold;
     color: #FFD700; /* Gold, like j-hat transformed */
+    transition: color 0.2s, transform 0.2s;
 }
 
 
@@ -235,4 +235,170 @@ footer {
         flex-direction: column;
         align-items: center;
     }
+}
+
+.animation-options label, .animation-options select {
+    font-size: 1em;
+    margin: 0 5px;
+    color: #FFD700;
+    background: #222;
+    border: none;
+    border-radius: 3px;
+    padding: 3px 6px;
+}
+.animation-options select {
+    color: #222;
+    background: #FFD700;
+    font-weight: bold;
+}
+.animation-options {
+    margin-bottom: 18px;
+    padding: 8px 0;
+    background: #232323;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+#custom-matrix-section {
+    margin-bottom: 40px;
+    padding: 20px;
+    background-color: #23282f;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+}
+#custom-matrix-form {
+    margin-bottom: 10px;
+}
+#custom-matrix-form input[type=number] {
+    width: 50px;
+    font-size: 1em;
+    margin: 2px 2px;
+    border-radius: 3px;
+    border: 1px solid #444;
+    background: #181818;
+    color: #FFD700;
+    text-align: center;
+}
+#custom-matrix-form button {
+    margin-left: 10px;
+    background: #61dafb;
+    color: #23282f;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+#custom-matrix-form button:hover {
+    background: #21a1f1;
+}
+.relevant-theory {
+    background: #232323;
+    border-left: 4px solid #FFD700;
+    padding: 10px 15px;
+    margin-top: 15px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.98em;
+}
+
+.preset-matrix-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.preset-matrix-buttons button {
+    background: #FFD700;
+    color: #23282f;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 1em;
+}
+.preset-matrix-buttons button:hover {
+    background: #ff6347;
+    color: #fff;
+}
+
+.custom-matrix-section {
+  background: #f8fafd;
+  border-radius: 16px;
+  padding: 24px;
+  margin: 32px 0;
+  box-shadow: 0 2px 12px #0001;
+  max-width: 500px;
+}
+.matrix-input-sliders {
+  margin-bottom: 12px;
+}
+.matrix-slider-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+.matrix-slider-row label {
+  font-family: inherit;
+  font-size: 1.1em;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.matrix-input-fields {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.matrix-input-fields input[type=number] {
+  width: 60px;
+  margin-right: 8px;
+  font-size: 1em;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+  padding: 2px 6px;
+}
+#custom-matrix-display {
+  margin: 10px 0 4px 0;
+  font-size: 1.2em;
+}
+#custom-matrix-det {
+  font-size: 1.1em;
+  margin-bottom: 8px;
+}
+.custom-matrix-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.custom-matrix-buttons button {
+  background: #e0e7ff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.custom-matrix-buttons button:hover {
+  background: #c7d2fe;
+}
+#custom-eigenvalues {
+  font-size: 1em;
+  color: #4f46e5;
+  margin-left: 6px;
+}
+#customMatrixCanvas {
+  display: block;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 8px #0002;
+  border: 1px solid #e0e7ff;
+  margin-top: 10px;
 }

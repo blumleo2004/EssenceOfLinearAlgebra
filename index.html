@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,6 +11,22 @@
     <header>
         <p class="quote">"It is my experience that proofs involving matrices can be shortened by 50% if one throws the matrices out."<br>-Emil Artin</p>
     </header>
+
+    <div class="animation-options" style="text-align:center; margin-bottom:10px;">
+        <label for="anim-speed">Animation Speed:</label>
+        <select id="anim-speed">
+            <option value="1000">Slow</option>
+            <option value="500" selected>Normal</option>
+            <option value="200">Fast</option>
+        </select>
+        <label for="anim-style">Style:</label>
+        <select id="anim-style">
+            <option value="linear" selected>Linear</option>
+            <option value="ease-in">Ease-In</option>
+            <option value="ease-out">Ease-Out</option>
+            <option value="bounce">Bounce</option>
+        </select>
+    </div>
 
     <main>
         <section id="intro">
@@ -190,6 +205,76 @@
             </div>
         </section>
         
+        <section id="custom-matrix-section">
+            <h2>Eigene Matrix ausprobieren</h2>
+            <div class="content-container">
+                <div class="text-explanation">
+                    <p>Gib deine eigene 2x2-Matrix ein und sieh dir die Wirkung auf das Gitter, die Basisvektoren und die Determinante an!</p>
+                    <form id="custom-matrix-form">
+                        <label>A = [<input type="number" id="custom-a11" value="1" step="any">,
+                        <input type="number" id="custom-a12" value="0" step="any">;<br>
+                        <input type="number" id="custom-a21" value="0" step="any">,
+                        <input type="number" id="custom-a22" value="1" step="any">]</label>
+                        <button type="submit">Anwenden</button>
+                    </form>
+                    <div class="preset-matrix-buttons" style="margin-bottom:10px;">
+                        <button type="button" data-matrix="1,0,0,1">Einheitsmatrix</button>
+                        <button type="button" data-matrix="2,0,0,1">Streckung X</button>
+                        <button type="button" data-matrix="1,0,0,2">Streckung Y</button>
+                        <button type="button" data-matrix="0,1,1,0">Achsenvertauschung</button>
+                        <button type="button" data-matrix="1,1,0,1">Scherung</button>
+                        <button type="button" data-matrix="0,-1,1,0">90° Drehung</button>
+                        <button type="button" data-matrix="1,0,0,-1">Spiegelung X</button>
+                        <button type="button" data-matrix="-1,0,0,1">Spiegelung Y</button>
+                    </div>
+                    <div class="matrix-display" id="custom-matrix-display"></div>
+                    <p>Determinante: <span id="custom-matrix-det" class="determinant-value"></span></p>
+                    <div class="relevant-theory">
+                        <h3>Was ist die Determinante?</h3>
+                        <p>Die Determinante einer 2x2-Matrix <code>A = [[a, b], [c, d]]</code> ist <code>ad - bc</code>. Sie gibt an, um welchen Faktor Flächen bei der Transformation gestreckt oder gestaucht werden. Ist die Determinante negativ, wird zusätzlich die Orientierung (z.B. Drehsinn) umgekehrt.</p>
+                        <h3>Matrixtransformationen</h3>
+                        <p>Jede 2x2-Matrix beschreibt eine lineare Abbildung des R². Die Spalten der Matrix geben an, wohin die Basisvektoren <span class="i-hat-color">î</span> und <span class="j-hat-color">ĵ</span> abgebildet werden. Das Gitter und das Einheitsquadrat werden entsprechend verzerrt, gestreckt, gestaucht oder gespiegelt.</p>
+                        <h3>Beispiel aus Jänich:</h3>
+                        <ul>
+                            <li>Matrix <code>[[2, 1], [1, 1]]</li>: Streckt in x-Richtung und schert das Gitter.</li>
+                            <li>Matrix <code>[[0, 1], [1, 0]]</li>: Spiegelt an der Winkelhalbierenden (Vertauschung der Achsen).</li>
+                            <li>Matrix <code>[[1, 0], [0, -1]]</li>: Spiegelung an der x-Achse.</li>
+                        </ul>
+                        <p>Siehe Jänich, Lineare Algebra, Kapitel 2 und 3 für weitere Beispiele und Erklärungen.</p>
+                    </div>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="customMatrixCanvas" width="400" height="400"></canvas>
+                </div>
+            </div>
+            <div class="custom-matrix-section">
+                <h2>Eigene Matrix ausprobieren</h2>
+                <div class="matrix-input-sliders">
+                    <div class="matrix-slider-row">
+                        <label>a₁₁ <input type="range" id="slider-a11" min="-5" max="5" step="0.01" value="1"></label>
+                        <label>a₁₂ <input type="range" id="slider-a12" min="-5" max="5" step="0.01" value="0"></label>
+                    </div>
+                    <div class="matrix-slider-row">
+                        <label>a₂₁ <input type="range" id="slider-a21" min="-5" max="5" step="0.01" value="0"></label>
+                        <label>a₂₂ <input type="range" id="slider-a22" min="-5" max="5" step="0.01" value="1"></label>
+                    </div>
+                </div>
+                <div class="matrix-input-fields">
+                    <input id="custom-a11" type="number" step="0.01" value="1"> <input id="custom-a12" type="number" step="0.01" value="0"><br>
+                    <input id="custom-a21" type="number" step="0.01" value="0"> <input id="custom-a22" type="number" step="0.01" value="1">
+                </div>
+                <div id="custom-matrix-display"></div>
+                <div id="custom-matrix-det"></div>
+                <div class="custom-matrix-buttons">
+                    <button id="show-inverse-matrix">Inverse anzeigen</button>
+                    <button id="show-eigenvectors">Eigenvektoren/Eigenwerte</button>
+                    <span id="custom-eigenvalues"></span>
+                    <button id="export-canvas-img">Export als Bild</button>
+                    <button id="quiz-placeholder">Quiz/Didaktik</button>
+                </div>
+                <canvas id="customMatrixCanvas" width="400" height="400"></canvas>
+            </div>
+        </section>
     </main>
 
     <footer>
