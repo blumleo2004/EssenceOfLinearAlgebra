@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Essence of Linear Algebra - Transformations & Determinants</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&family=Manifold&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <p class="quote">"It is my experience that proofs involving matrices can be shortened by 50% if one throws the matrices out."<br>-Emil Artin</p>
+    </header>
+
+    <main>
+        <section id="intro">
+            <h1>Matrix Operations and Linear Transformations</h1>
+            <p>This exploration follows the style of 3Blue1Brown to intuitively understand matrix multiplication as composition of linear transformations, and determinants as scaling factors of space.</p>
+        </section>
+
+        <section id="recap">
+            <h2>Quick Recap: Linear Transformations & Determinants</h2>
+            <div class="content-container">
+                <div class="text-explanation">
+                    <p>A linear transformation is a function that takes vectors as inputs and produces vectors as outputs. Visually, it's a transformation of space where:</p>
+                    <ul>
+                        <li>Grid lines remain parallel and evenly spaced.</li>
+                        <li>The origin remains fixed.</li>
+                    </ul>
+                    <p>A 2D linear transformation is completely determined by where it sends the basis vectors <span class="i-hat-color">î (i-hat)</span> and <span class="j-hat-color">ĵ (j-hat)</span>.</p>
+                    <p>The coordinates of the transformed <span class="i-hat-color">î</span> become the first column of the matrix, and the coordinates of the transformed <span class="j-hat-color">ĵ</span> become the second column.</p>
+                    <div class="matrix-display" id="recap-matrix">
+                        <!-- Matrix will be populated by JS -->
+                    </div>
+                    <p>The <strong>determinant</strong> of this transformation is: <span id="recap-matrix-determinant" class="determinant-value"></span>.
+                       This value indicates how much the area of any shape scales under this transformation. A yellow square (initially unit area) is shown on the canvas; its transformed area is equal to the absolute value of the determinant. A negative determinant means the orientation of space is flipped (indicated by a reddish tint on the transformed square).</p>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="recapCanvas" width="400" height="400"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="determinants-explained">
+            <h2>The Essence of the Determinant</h2>
+            <div class="content-container">
+                <div class="text-explanation">
+                    <p>The determinant of a 2D linear transformation is a scalar value that provides crucial information about the transformation:</p>
+                    <ul>
+                        <li><strong>Area Scaling:</strong> The absolute value of the determinant is the factor by which areas are scaled. If a unit square (area 1) is transformed, its new area will be |determinant|.</li>
+                        <li><strong>Orientation:</strong>
+                            <ul>
+                                <li>A <strong>positive determinant</strong> means the orientation of space is preserved.</li>
+                                <li>A <strong>negative determinant</strong> means the orientation of space is flipped (like a mirror image). The transformed unit square on the canvases will be tinted red.</li>
+                                <li>A <strong>zero determinant</strong> means the transformation squishes space into a lower dimension (a line or a point). The area becomes zero. The transformed unit square will be tinted gray.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <p>For a 2x2 matrix: 
+                        <div class="matrix-display" style="display: inline-block; vertical-align: middle;">
+                            <table><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>
+                        </div>
+                        the determinant is calculated as <code>ad - bc</code>.
+                    </p>
+                    <p class="intuition-note">Think of the determinant as measuring how much a small patch of area "stretches" or "squishes," and whether it gets flipped over.</p>
+                    <p>An important property for matrix multiplication (composition of transformations) is: <code>det(M<sub>1</sub>M<sub>2</sub>) = det(M<sub>1</sub>) * det(M<sub>2</sub>)</code>. The overall scaling factor is the product of individual scaling factors.</p>
+                </div>
+                <div class="canvas-container">
+                     <canvas id="determinantDemoCanvas" width="400" height="400"></canvas>
+                     <p>Demo: Matrix <div class="matrix-display" id="demo-det-matrix"></div> Det: <span id="demo-det-value" class="determinant-value"></span></p>
+                </div>
+            </div>
+        </section>
+
+        <section id="composition">
+            <h2>Composition of Transformations (M<sub>S</sub>M<sub>R</sub>)</h2>
+            <p>Often, we want to apply one transformation, and then another. The overall effect is a new, single linear transformation called the "composition" of the two.</p>
+            
+            <div class="transformation-steps">
+                <p>Let's consider two transformations:</p>
+                <div class="matrix-pair">
+                    <div>
+                        <p>1. A 90° CCW Rotation (M<sub>R</sub>): Det = <span id="det-M_R" class="determinant-value"></span></p>
+                        <div class="matrix-display" id="matrix-R"></div>
+                    </div>
+                    <div>
+                        <p>2. A Shear Transformation (M<sub>S</sub>): Det = <span id="det-M_S" class="determinant-value"></span></p>
+                        <div class="matrix-display" id="matrix-S"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-container">
+                <div class="text-explanation">
+                    <h3>Step 1: Apply Rotation (M<sub>R</sub>)</h3>
+                    <p>Initially, <span class="i-hat-color">î</span> = [1, 0]<sup>T</sup> and <span class="j-hat-color">ĵ</span> = [0, 1]<sup>T</sup>.</p>
+                    <p>After M<sub>R</sub>: <span class="i-hat-color">î'</span> lands at <span id="i-hat-after-R"></span>, <span class="j-hat-color">ĵ'</span> lands at <span id="j-hat-after-R"></span>.</p>
+                    
+                    <h3>Step 2: Apply Shear (M<sub>S</sub>) to the result of M<sub>R</sub></h3>
+                    <p>We apply M<sub>S</sub> to <span class="i-hat-color">î'</span> and <span class="j-hat-color">ĵ'</span>.</p>
+                    <p>M<sub>S</sub> * <span class="i-hat-color">î'</span> = <span id="i-hat-after-SR"></span></p>
+                    <p>M<sub>S</sub> * <span class="j-hat-color">ĵ'</span> = <span id="j-hat-after-SR"></span></p>
+                    <p>These final landing spots for the original basis vectors form the columns of our composition matrix M<sub>C</sub> = M<sub>S</sub> * M<sub>R</sub>.</p>
+                    <p>Composition Matrix (M<sub>C</sub> = M<sub>S</sub>M<sub>R</sub>): Det = <span id="det-M_C_SR" class="determinant-value"></span></p>
+                    <div class="matrix-display" id="matrix-composition-SR"></div>
+                    <p class="intuition-note">This matrix M<sub>C</sub> represents the single transformation of "first rotate, then shear". Notice <code>det(M<sub>S</sub>M<sub>R</sub>) = det(M<sub>S</sub>) * det(M<sub>R</sub>)</code>.</p>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="compositionCanvas" width="400" height="400"></canvas>
+                    <div class="controls">
+                        <button id="resetComposition">Reset</button>
+                        <button id="applyRotation">1. Apply Rotation (M<sub>R</sub>)</button>
+                        <button id="applyShearToRotation">2. Apply Shear (M<sub>S</sub>)</button>
+                        <button id="showCompositionSR">Show M<sub>S</sub>M<sub>R</sub></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="order-matters">
+            <h2>Order Matters: M<sub>S</sub>M<sub>R</sub> ≠ M<sub>R</sub>M<sub>S</sub></h2>
+            <p>What if we applied the shear first, then the rotation? (M<sub>R</sub>M<sub>S</sub>)</p>
+            <div class="content-container">
+                <div class="text-explanation">
+                    <h3>Step 1: Apply Shear (M<sub>S</sub>)</h3>
+                     <p>After M<sub>S</sub>: <span class="i-hat-color">î''</span> lands at <span id="i-hat-after-S"></span>, <span class="j-hat-color">ĵ''</span> lands at <span id="j-hat-after-S"></span>.</p>
+                     <h3>Step 2: Apply Rotation (M<sub>R</sub>) to the result of M<sub>S</sub></h3>
+                    <p>M<sub>R</sub> * <span class="i-hat-color">î''</span> = <span id="i-hat-after-RS"></span></p>
+                    <p>M<sub>R</sub> * <span class="j-hat-color">ĵ''</span> = <span id="j-hat-after-RS"></span></p>
+                    <p>Composition Matrix (M'<sub>C</sub> = M<sub>R</sub>M<sub>S</sub>): Det = <span id="det-M_C_RS" class="determinant-value"></span></p>
+                    <div class="matrix-display" id="matrix-composition-RS"></div>
+                    <p class="intuition-note">Comparing M<sub>S</sub>M<sub>R</sub> and M<sub>R</sub>M<sub>S</sub>, we see they are different! However, notice their determinants are the same: <code>det(M<sub>R</sub>M<sub>S</sub>) = det(M<sub>R</sub>) * det(M<sub>S</sub>)</code>.</p>
+                </div>
+                <div class="canvas-container">
+                     <canvas id="orderCanvas" width="400" height="400"></canvas>
+                     <div class="controls">
+                        <button id="resetOrder">Reset</button>
+                        <button id="applyShearOrder">1. Apply Shear (M<sub>S</sub>)</button>
+                        <button id="applyRotationToShearOrder">2. Apply Rotation (M<sub>R</sub>)</button>
+                        <button id="showCompositionRS">Show M<sub>R</sub>M<sub>S</sub></button>
+                    </div>
+                </div>
+            </div>
+            <p class="important-rule">When multiplying matrices, M<sub>left</sub>M<sub>right</sub>, you apply the transformation M<sub>right</sub> first, then M<sub>left</sub>. This is why we read compositions from right to left!</p>
+        </section>
+
+        <section id="associativity">
+            <h2>Associativity: (AB)C = A(BC)</h2>
+            <div class="pi-characters">
+                <div class="pi-char">π</div>
+                <div class="pi-char">π</div>
+                <div class="pi-char">π</div>
+                <div class="pi-char teacher">π <span class="speech-bubble">This property is just trivial!</span></div>
+            </div>
+            <p>If you have three transformations A, B, and C applied in that order (C first, then B, then A):</p>
+            <p><code>Transformation_A ( Transformation_B ( Transformation_C (vector) ) )</code></p>
+            <p>This is represented by the matrix product <code>A * B * C</code>.</p>
+            <p>Associativity means it doesn't matter how you group the multiplications:</p>
+            <ul>
+                <li><code>(AB)C</code>: Combine A and B first (apply B, then A). Then apply this combined transformation to the result of C.
+                    (Meaning, apply transformation C, then apply the combined transformation AB).</li>
+                <li><code>A(BC)</code>: Combine B and C first (apply C, then B). Then apply A to the result of this combined transformation.
+                    (Meaning, apply the combined transformation BC, then apply transformation A).</li>
+            </ul>
+            <p>Visually, you're just applying three transformations one after the other. The way you *think* about combining them in intermediate steps doesn't change the final outcome.</p>
+            <div class="content-container">
+                <div class="text-explanation">
+                    <p>Let M<sub>A</sub>, M<sub>B</sub>, M<sub>C</sub> be three matrices.</p>
+                    <p>The transformation (M<sub>A</sub>M<sub>B</sub>)M<sub>C</sub> means:
+                        <ol>
+                            <li>Apply transformation C.</li>
+                            <li>Then apply transformation B.</li>
+                            <li>Then apply transformation A.</li>
+                        </ol>
+                    </p>
+                     <p>The transformation M<sub>A</sub>(M<sub>B</sub>M<sub>C</sub>) means:
+                        <ol>
+                            <li>Apply transformation C.</li>
+                            <li>Then apply transformation B.</li>
+                            <li>Then apply transformation A.</li>
+                        </ol>
+                    </p>
+                    <p class="intuition-note">It's the same sequence of actual space manipulations! The determinants also follow: <code>det((AB)C) = det(A)det(B)det(C) = det(A(BC))</code>.</p>
+                </div>
+                 <div class="canvas-container">
+                     <canvas id="associativityCanvas" width="400" height="400"></canvas>
+                     <!-- Controls could be added here to step through A, B, C -->
+                </div>
+            </div>
+        </section>
+        
+    </main>
+
+    <footer>
+        <p>Inspired by 3Blue1Brown's "Essence of Linear Algebra" series.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

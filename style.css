@@ -1,0 +1,238 @@
+
+body {
+    background-color: #1a1a1a; /* Darker than #222 for more contrast */
+    color: #e0e0e0; /* Light gray for text */
+    font-family: 'Roboto Slab', serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    font-size: 17px;
+}
+
+header {
+    text-align: center;
+    padding: 20px;
+    background-color: #111; /* Even darker for header */
+    border-bottom: 1px solid #333;
+}
+
+.quote {
+    font-style: italic;
+    color: #aaa;
+    font-family: 'Manifold', sans-serif; /* Or a similar clean sans-serif */
+    font-size: 1.1em;
+}
+
+main {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+section {
+    margin-bottom: 40px;
+    padding: 20px;
+    background-color: #282c34; /* Slightly lighter dark shade for sections */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+h1, h2, h3 {
+    color: #61dafb; /* A bright accent color, typical 3b1b */
+    font-family: 'Manifold', sans-serif;
+    border-bottom: 1px solid #444;
+    padding-bottom: 10px;
+}
+h1 { font-size: 2.2em; text-align: center;}
+h2 { font-size: 1.8em; }
+h3 { font-size: 1.4em; color: #98c379; /* Greenish for sub-headings */}
+
+
+.content-container {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start; /* Align items to the top */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.text-explanation {
+    flex: 1;
+    min-width: 300px; /* Ensure text has enough space */
+}
+
+.canvas-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 300px; /* Ensure canvas has enough space */
+}
+
+
+canvas {
+    border: 1px solid #444;
+    background-color: #000; /* Black canvas background */
+    display: block;
+    margin-bottom: 10px;
+}
+
+.matrix-display {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #1e1e1e;
+    padding: 10px;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 10px 0;
+    border: 1px solid #555;
+    line-height: 1.2;
+    font-size: 1.1em;
+}
+
+.matrix-display table {
+    border-collapse: collapse;
+    margin: 0 auto; /* Center the table if it's smaller */
+}
+
+.matrix-display td {
+    padding: 5px 10px;
+    text-align: center;
+    min-width: 30px;
+}
+/* Brackets */
+.matrix-display table {
+    border-left: 2px solid #e0e0e0;
+    border-right: 2px solid #e0e0e0;
+    padding: 0 3px; /* Space for brackets */
+}
+
+
+.i-hat-color { color: #32CD32; /* Lime Green */}
+.j-hat-color { color: #FF6347; /* Tomato Red */}
+.transformed-i-color { color: #6495ED; /* Cornflower Blue */}
+.transformed-j-color { color: #FFD700; /* Gold */}
+
+.determinant-value {
+    font-weight: bold;
+    color: #FFD700; /* Gold, like j-hat transformed */
+}
+
+
+.transformation-steps {
+    margin-bottom: 20px;
+}
+.matrix-pair {
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
+    margin-top: 10px;
+}
+.matrix-pair > div {
+    text-align: center;
+}
+
+.controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+button {
+    background-color: #61dafb;
+    color: #282c34;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Manifold', sans-serif;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: #21a1f1;
+}
+
+.intuition-note, .important-rule {
+    background-color: #333a45;
+    padding: 10px;
+    border-left: 4px solid #61dafb;
+    margin-top: 15px;
+    border-radius: 0 4px 4px 0;
+}
+.important-rule {
+    border-left-color: #ff6347; /* Red for important rules */
+    font-weight: bold;
+}
+
+.pi-characters {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* Align to bottom for teacher */
+    margin: 20px 0;
+    font-size: 2em;
+    gap: 20px;
+}
+.pi-char {
+    color: #61dafb; /* Blue Pi */
+}
+.pi-char.teacher {
+    color: #e0e0e0; /* Brown/Gray Pi */
+    position: relative; /* For speech bubble */
+}
+.speech-bubble {
+    position: absolute;
+    bottom: 100%; /* Position above the Pi */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #fff;
+    color: #1a1a1a;
+    padding: 8px 12px;
+    border-radius: 15px 15px 15px 0; /* Speech bubble shape */
+    font-size: 0.5em; /* Smaller font for bubble */
+    white-space: nowrap;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    margin-bottom: 5px;
+}
+
+
+ul {
+    list-style-type: "→ "; /* Custom bullet */
+    padding-left: 20px;
+}
+ul ul { /* Nested lists */
+    list-style-type: "◦ "; /* Custom bullet for sub-items */
+    padding-left: 25px; /* Indent sub-items more */
+}
+li {
+    margin-bottom: 5px;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+    color: #aaa;
+    font-size: 0.9em;
+    border-top: 1px solid #333;
+}
+
+@media (max-width: 768px) {
+    .content-container {
+        flex-direction: column;
+    }
+    .canvas-container, .text-explanation {
+        flex: none; /* Reset flex grow */
+        width: 100%;
+    }
+    canvas {
+        width: 100%;
+        max-width: 350px; /* Prevent oversized canvas on mobile */
+        height: auto; /* Maintain aspect ratio */
+    }
+    .matrix-pair {
+        flex-direction: column;
+        align-items: center;
+    }
+}
